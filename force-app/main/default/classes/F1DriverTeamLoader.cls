@@ -51,6 +51,7 @@ public with sharing class F1DriverTeamLoader {
                 piloto.DateOfBirth__c = (String) driver.get('dateOfBirth');
                 piloto.Code__c = (String) driver.get('code');
                 piloto.URL__c = (String) driver.get('url');
+                piloto.Constructor__c = escuderiasMap.get(escuderiaName);
                 pilotosToUpsert.add(piloto);
             }
 
