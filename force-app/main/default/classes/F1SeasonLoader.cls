@@ -21,6 +21,7 @@ public with sharing class F1SeasonLoader {
                 Map<String, Object> seasonData = (Map<String, Object>) obj;
 
                 Season__c seasonRecord = new Season__c();
+                seasonRecord.Name = (String) seasonData.get('season');
                 seasonRecord.Season__c = Integer.valueOf((String) seasonData.get('season')); // Año
                 seasonRecord.URL__c = (String) seasonData.get('url');
 
