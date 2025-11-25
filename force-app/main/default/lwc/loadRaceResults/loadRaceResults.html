@@ -1,0 +1,10 @@
+<template>
+    <lightning-card title="Load Results">
+        <div class="slds-p-around_medium">
+            <lightning-button label="Load Results" onclick={handleClick} variant="brand"></lightning-button>
+        </div>
+        <template if:true={message}>
+            <p class="slds-p-around_medium">{message}</p>
+        </template>
+    </lightning-card>
+</template>
