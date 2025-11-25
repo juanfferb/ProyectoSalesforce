@@ -1,42 +1,51 @@
 public with sharing class F1CircuitLoader {
     public static void loadCircuits() {
         try {
-            String endpoint = 'f1/circuits.json'; // URL correcta para circuitos
-            String jsonResponse = ErgastAPI.getF1Data(endpoint);
+            Integer offset = 0;
+            Integer pageLimit = 30;
+            Boolean moreData = true;
 
-            Map<String, Object> root = (Map<String, Object>) JSON.deserializeUntyped(jsonResponse);
-            if (!root.containsKey('MRData')) return;
+            List<Circuit__c> allCircuits = new List<Circuit__c>();
 
-            Map<String, Object> mrData = (Map<String, Object>) root.get('MRData');
-            Object circuitTableObj = mrData.get('CircuitTable');
-            if (!(circuitTableObj instanceof Map<String, Object>)) return;
+            while (moreData) {
+                String endpoint = 'f1/circuits.json?limit=' + pageLimit + '&offset=' + offset;
+                String jsonResponse = ErgastAPI.getF1Data(endpoint);
 
-            Map<String, Object> circuitTable = (Map<String, Object>) circuitTableObj;
-            List<Object> circuits = (List<Object>) circuitTable.get('Circuits');
-            if (circuits == null || circuits.isEmpty()) return;
+                Map<String, Object> root = (Map<String, Object>) JSON.deserializeUntyped(jsonResponse);
+                if (!root.containsKey('MRData')) break;
 
-            List<Circuit__c> circuitosToUpsert = new List<Circuit__c>();
+                Map<String, Object> mrData = (Map<String, Object>) root.get('MRData');
+                Object circuitTableObj = mrData.get('CircuitTable');
+                if (!(circuitTableObj instanceof Map<String, Object>)) break;
 
-            for (Object obj : circuits) {
-                Map<String, Object> circuit = (Map<String, Object>) obj;
-                Map<String, Object> location = (Map<String, Object>) circuit.get('Location');
+                Map<String, Object> circuitTable = (Map<String, Object>) circuitTableObj;
+                List<Object> circuits = (List<Object>) circuitTable.get('Circuits');
+                if (circuits == null || circuits.isEmpty()) {
+                    moreData = false;
+                    break;
+                }
 
-                Circuit__c circuito = new Circuit__c();
-                circuito.Name = (String) circuit.get('circuitName');
-                circuito.CircuitId__c = (String) circuit.get('circuitId'); // External ID
-                circuito.Locality__c = (String) location.get('locality');
-                circuito.Country__c = (String) location.get('country');
-                circuito.Longitude__c = (String) location.get('long');
-                circuito.Latitude__c = (String) location.get('lat');
-                circuito.URL__c = (String) circuit.get('url');
+                for (Object obj : circuits) {
+                    Map<String, Object> circuit = (Map<String, Object>) obj;
+                    Map<String, Object> location = (Map<String, Object>) circuit.get('Location');
 
-                circuitosToUpsert.add(circuito);
+                    Circuit__c circuito = new Circuit__c();
+                    circuito.Name = (String) circuit.get('circuitName');
+                    circuito.CircuitId__c = (String) circuit.get('circuitId'); // External ID
+                    circuito.Locality__c = (String) location.get('locality');
+                    circuito.Country__c = (String) location.get('country');
+                    circuito.Longitude__c = (String) location.get('long');
+                    circuito.Latitude__c = (String) location.get('lat');
+                    circuito.URL__c = (String) circuit.get('url');
+
+                    allCircuits.add(circuito);
+                }
+
+                offset += pageLimit; // Avanzar a la siguiente página
             }
 
-            // Upsert usando External ID
-            upsert circuitosToUpsert CircuitId__c;
-
-            System.debug('Circuitos procesados: ' + circuitosToUpsert.size());
+            upsert allCircuits CircuitId__c;
+            System.debug('Circuitos procesados: ' + allCircuits.size());
         } catch (Exception e) {
             System.debug('Error en loadCircuits: ' + e.getMessage());
         }

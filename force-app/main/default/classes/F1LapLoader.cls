@@ -2,20 +2,11 @@
 public with sharing class F1LapLoader {
     public static void loadLaps() {
         try {
-            String endpoint = 'f1/2025/1/laps.json';
-            String jsonResponse = ErgastAPI.getF1Data(endpoint);
+            Integer offset = 0;
+            Integer pageLimit = 30;
+            Boolean moreData = true;
 
-            Map<String, Object> root = (Map<String, Object>) JSON.deserializeUntyped(jsonResponse);
-            if (!root.containsKey('MRData')) return;
-
-            Map<String, Object> mrData = (Map<String, Object>) root.get('MRData');
-            Object raceTableObj = mrData.get('RaceTable');
-            if (!(raceTableObj instanceof Map<String, Object>)) return;
-
-            Map<String, Object> raceTable = (Map<String, Object>) raceTableObj;
-            List<Object> races = (List<Object>) raceTable.get('Races');
-            if (races == null || races.isEmpty()) return;
-
+            // Mapas para relaciones
             Map<String, Id> raceMap = new Map<String, Id>();
             for (Race__c r : [SELECT Id, RaceId__c FROM Race__c]) {
                 raceMap.put(r.RaceId__c, r.Id);
@@ -26,44 +17,65 @@ public with sharing class F1LapLoader {
                 driverMap.put(d.DriverId__c, d.Id);
             }
 
-            List<Lap__c> lapsToUpsert = new List<Lap__c>();
+            List<Lap__c> allLaps = new List<Lap__c>();
 
-            for (Object raceObj : races) {
-                Map<String, Object> raceData = (Map<String, Object>) raceObj;
-                String season = (String) raceData.get('season');
-                String round = (String) raceData.get('round');
-                String raceKey = season + '-' + round;
+            while (moreData) {
+                String endpoint = 'f1/2025/1/laps.json?limit=' + pageLimit + '&offset=' + offset;
+                String jsonResponse = ErgastAPI.getF1Data(endpoint);
 
-                List<Object> laps = (List<Object>) raceData.get('Laps');
-                if (laps == null || laps.isEmpty()) continue;
+                Map<String, Object> root = (Map<String, Object>) JSON.deserializeUntyped(jsonResponse);
+                if (!root.containsKey('MRData')) break;
 
-                for (Object lapObj : laps) {
-                    Map<String, Object> lapData = (Map<String, Object>) lapObj;
-                    String lapNumber = (String) lapData.get('number');
+                Map<String, Object> mrData = (Map<String, Object>) root.get('MRData');
+                Object raceTableObj = mrData.get('RaceTable');
+                if (!(raceTableObj instanceof Map<String, Object>)) break;
 
-                    List<Object> timings = (List<Object>) lapData.get('Timings');
-                    for (Object timingObj : timings) {
-                        Map<String, Object> timingData = (Map<String, Object>) timingObj;
-                        String driverId = (String) timingData.get('driverId');
+                Map<String, Object> raceTable = (Map<String, Object>) raceTableObj;
+                List<Object> races = (List<Object>) raceTable.get('Races');
+                if (races == null || races.isEmpty()) {
+                    moreData = false;
+                    break;
+                }
 
-                        Lap__c lapRecord = new Lap__c();
-                        lapRecord.LapId__c = raceKey + '-' + driverId + '-' + lapNumber; // External ID
-                        lapRecord.Name = 'Lap - ' + driverId;
+                for (Object raceObj : races) {
+                    Map<String, Object> raceData = (Map<String, Object>) raceObj;
+                    String season = (String) raceData.get('season');
+                    String round = (String) raceData.get('round');
+                    String raceKey = season + '-' + round;
 
-                        lapRecord.LapNumber__c = Integer.valueOf(lapNumber);
-                        lapRecord.Position__c = Integer.valueOf((String) timingData.get('position'));
-                        lapRecord.Time__c = (String) timingData.get('time');
+                    List<Object> laps = (List<Object>) raceData.get('Laps');
+                    if (laps == null || laps.isEmpty()) continue;
 
-                        if (raceMap.containsKey(raceKey)) lapRecord.Race__c = raceMap.get(raceKey);
-                        if (driverMap.containsKey(driverId)) lapRecord.Driver__c = driverMap.get(driverId);
+                    for (Object lapObj : laps) {
+                        Map<String, Object> lapData = (Map<String, Object>) lapObj;
+                        String lapNumber = (String) lapData.get('number');
 
-                        lapsToUpsert.add(lapRecord);
+                        List<Object> timings = (List<Object>) lapData.get('Timings');
+                        for (Object timingObj : timings) {
+                            Map<String, Object> timingData = (Map<String, Object>) timingObj;
+                            String driverId = (String) timingData.get('driverId');
+
+                            Lap__c lapRecord = new Lap__c();
+                            lapRecord.LapId__c = raceKey + '-' + driverId + '-' + lapNumber; // External ID
+                            lapRecord.Name = 'Lap - ' + driverId;
+
+                            lapRecord.LapNumber__c = Integer.valueOf(lapNumber);
+                            lapRecord.Position__c = Integer.valueOf((String) timingData.get('position'));
+                            lapRecord.Time__c = (String) timingData.get('time');
+
+                            if (raceMap.containsKey(raceKey)) lapRecord.Race__c = raceMap.get(raceKey);
+                            if (driverMap.containsKey(driverId)) lapRecord.Driver__c = driverMap.get(driverId);
+
+                            allLaps.add(lapRecord);
+                        }
                     }
                 }
+
+                offset += pageLimit; // Avanzar a la siguiente página
             }
 
-            upsert lapsToUpsert LapId__c;
-            System.debug('Laps procesados: ' + lapsToUpsert.size());
+            upsert allLaps LapId__c;
+            System.debug('Laps procesadas: ' + allLaps.size());
         } catch (Exception e) {
             System.debug('Error en loadLaps: ' + e.getMessage());
         }
