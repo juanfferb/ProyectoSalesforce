@@ -1,21 +1,11 @@
-
 public with sharing class F1QualifyingLoader {
     public static void loadQualifyingResults() {
         try {
-            String endpoint = 'f1/2025/qualifying.json';
-            String jsonResponse = ErgastAPI.getF1Data(endpoint);
+            Integer offset = 0;
+            Integer pageLimit = 30;
+            Boolean moreData = true;
 
-            Map<String, Object> root = (Map<String, Object>) JSON.deserializeUntyped(jsonResponse);
-            if (!root.containsKey('MRData')) return;
-
-            Map<String, Object> mrData = (Map<String, Object>) root.get('MRData');
-            Object raceTableObj = mrData.get('RaceTable');
-            if (!(raceTableObj instanceof Map<String, Object>)) return;
-
-            Map<String, Object> raceTable = (Map<String, Object>) raceTableObj;
-            List<Object> races = (List<Object>) raceTable.get('Races');
-            if (races == null || races.isEmpty()) return;
-
+            // Mapas para relaciones
             Map<String, Id> raceMap = new Map<String, Id>();
             for (Race__c r : [SELECT Id, RaceId__c FROM Race__c]) {
                 raceMap.put(r.RaceId__c, r.Id);
@@ -31,44 +21,65 @@ public with sharing class F1QualifyingLoader {
                 constructorMap.put(c.Constructor_Code__c, c.Id);
             }
 
-            List<Qualifying__c> qualifyingResultsToUpsert = new List<Qualifying__c>();
+            List<Qualifying__c> allQualifyingResults = new List<Qualifying__c>();
 
-            for (Object raceObj : races) {
-                Map<String, Object> raceData = (Map<String, Object>) raceObj;
-                String season = (String) raceData.get('season');
-                String round = (String) raceData.get('round');
-                String raceKey = season + '-' + round;
+            while (moreData) {
+                String endpoint = 'f1/2025/qualifying.json?limit=' + pageLimit + '&offset=' + offset;
+                String jsonResponse = ErgastAPI.getF1Data(endpoint);
 
-                List<Object> qualifyingResults = (List<Object>) raceData.get('QualifyingResults');
-                if (qualifyingResults == null || qualifyingResults.isEmpty()) continue;
+                Map<String, Object> root = (Map<String, Object>) JSON.deserializeUntyped(jsonResponse);
+                if (!root.containsKey('MRData')) break;
 
-                for (Object qualObj : qualifyingResults) {
-                    Map<String, Object> qualData = (Map<String, Object>) qualObj;
-                    Map<String, Object> driverData = (Map<String, Object>) qualData.get('Driver');
-                    Map<String, Object> constructorData = (Map<String, Object>) qualData.get('Constructor');
+                Map<String, Object> mrData = (Map<String, Object>) root.get('MRData');
+                Object raceTableObj = mrData.get('RaceTable');
+                if (!(raceTableObj instanceof Map<String, Object>)) break;
 
-                    String driverId = (String) driverData.get('driverId');
-                    String constructorId = (String) constructorData.get('constructorId');
-
-                    Qualifying__c qualRecord = new Qualifying__c();
-                    qualRecord.QualifyingId__c = raceKey + '-' + driverId; // External ID
-                    qualRecord.Name = 'Qualifying - ' + driverData.get('familyName');
-
-                    qualRecord.Position__c = Integer.valueOf((String) qualData.get('position'));
-                    qualRecord.Q1__c = (String) qualData.get('Q1');
-                    qualRecord.Q2__c = (String) qualData.get('Q2');
-                    qualRecord.Q3__c = (String) qualData.get('Q3');
-
-                    if (raceMap.containsKey(raceKey)) qualRecord.Race__c = raceMap.get(raceKey);
-                    if (driverMap.containsKey(driverId)) qualRecord.Driver__c = driverMap.get(driverId);
-                    if (constructorMap.containsKey(constructorId)) qualRecord.Constructor__c = constructorMap.get(constructorId);
-
-                    qualifyingResultsToUpsert.add(qualRecord);
+                Map<String, Object> raceTable = (Map<String, Object>) raceTableObj;
+                List<Object> races = (List<Object>) raceTable.get('Races');
+                if (races == null || races.isEmpty()) {
+                    moreData = false;
+                    break;
                 }
+
+                for (Object raceObj : races) {
+                    Map<String, Object> raceData = (Map<String, Object>) raceObj;
+                    String season = (String) raceData.get('season');
+                    String round = (String) raceData.get('round');
+                    String raceKey = season + '-' + round;
+
+                    List<Object> qualifyingResults = (List<Object>) raceData.get('QualifyingResults');
+                    if (qualifyingResults == null || qualifyingResults.isEmpty()) continue;
+
+                    for (Object qualObj : qualifyingResults) {
+                        Map<String, Object> qualData = (Map<String, Object>) qualObj;
+                        Map<String, Object> driverData = (Map<String, Object>) qualData.get('Driver');
+                        Map<String, Object> constructorData = (Map<String, Object>) qualData.get('Constructor');
+
+                        String driverId = (String) driverData.get('driverId');
+                        String constructorId = (String) constructorData.get('constructorId');
+
+                        Qualifying__c qualRecord = new Qualifying__c();
+                        qualRecord.QualifyingId__c = raceKey + '-' + driverId; // External ID
+                        qualRecord.Name = 'Qualifying - ' + driverData.get('familyName');
+
+                        qualRecord.Position__c = Integer.valueOf((String) qualData.get('position'));
+                        qualRecord.Q1__c = (String) qualData.get('Q1');
+                        qualRecord.Q2__c = (String) qualData.get('Q2');
+                        qualRecord.Q3__c = (String) qualData.get('Q3');
+
+                        if (raceMap.containsKey(raceKey)) qualRecord.Race__c = raceMap.get(raceKey);
+                        if (driverMap.containsKey(driverId)) qualRecord.Driver__c = driverMap.get(driverId);
+                        if (constructorMap.containsKey(constructorId)) qualRecord.Constructor__c = constructorMap.get(constructorId);
+
+                        allQualifyingResults.add(qualRecord);
+                    }
+                }
+
+                offset += pageLimit; // Avanzar a la siguiente página
             }
 
-            upsert qualifyingResultsToUpsert QualifyingId__c;
-            System.debug('Qualifying Results procesados: ' + qualifyingResultsToUpsert.size());
+            upsert allQualifyingResults QualifyingId__c;
+            System.debug('Qualifying Results procesados: ' + allQualifyingResults.size());
         } catch (Exception e) {
             System.debug('Error en loadQualifyingResults: ' + e.getMessage());
         }
