@@ -1,10 +1,22 @@
 <template>
-    <lightning-card title="Load Results">
+    <lightning-card title="Gestión de Resultados de Carrera" icon-name="custom:custom63">
         <div class="slds-p-around_medium">
-            <lightning-button label="Load Results" onclick={handleClick} variant="brand"></lightning-button>
+            <p class="slds-text-body_regular slds-m-bottom_small">
+                Haz clic en el botón para cargar los resultados oficiales de esta carrera desde la API de Fórmula 1.
+            </p>
+            <lightning-button 
+                label="Cargar Resultados" 
+                onclick={handleClick} 
+                variant="brand" 
+                icon-name="utility:refresh" 
+                class="slds-m-bottom_medium">
+            </lightning-button>
         </div>
+
         <template if:true={message}>
-            <p class="slds-p-around_medium">{message}</p>
+            <div class="slds-p-around_medium">
+                <p class={messageClass}>{message}</p>
+            </div>
         </template>
     </lightning-card>
 </template>
