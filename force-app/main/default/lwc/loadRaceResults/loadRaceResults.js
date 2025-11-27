@@ -1,14 +1,15 @@
 import { LightningElement, api, track } from 'lwc';
 import loadRaceResults from '@salesforce/apex/F1RaceResultLoader.loadRaceResults';
+import getRaceIdByRecordId from '@salesforce/apex/F1RaceResultLoader.getRaceIdByRecordId';
 
 export default class LoadRaceResults extends LightningElement {
-    @api recordId; // Id del registro Race__c
+    @api recordId;
     @track message;
 
     async handleClick() {
         this.message = 'Procesando...';
         try {
-            const raceId = await this.getRaceId();
+            const raceId = await getRaceIdByRecordId({ recordId: this.recordId });
             if (!raceId) {
                 this.message = 'Error: RaceId__c no encontrado en el registro.';
                 return;
@@ -18,11 +19,5 @@ export default class LoadRaceResults extends LightningElement {
         } catch (error) {
             this.message = 'Error inesperado: ' + (error.body ? error.body.message : error.message);
         }
-    }
-
-    async getRaceId() {
-        const res = await fetch(`/services/data/v57.0/sobjects/Race__c/${this.recordId}`);
-        const data = await res.json();
-        return data.RaceId__c;
     }
 }

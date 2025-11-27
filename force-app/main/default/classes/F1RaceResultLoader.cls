@@ -1,8 +1,18 @@
 public with sharing class F1RaceResultLoader {
+
+    @AuraEnabled(cacheable=true)
+    public static String getRaceIdByRecordId(Id recordId) {
+        try {
+            Race__c race = [SELECT RaceId__c FROM Race__c WHERE Id = :recordId LIMIT 1];
+            return race.RaceId__c;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     @AuraEnabled
     public static String loadRaceResults(String raceId) {
         try {
-            // Validar formato del RaceId
             if (String.isBlank(raceId)) return 'RaceId no proporcionado.';
             List<String> parts = raceId.split('-');
             if (parts.size() != 2) return 'Formato inválido de RaceId (esperado: season-round).';
@@ -10,7 +20,7 @@ public with sharing class F1RaceResultLoader {
             String season = parts[0];
             String round = parts[1];
 
-            // Mapas para relaciones
+            // Mapas
             Map<String, Id> raceMap = new Map<String, Id>();
             for (Race__c r : [SELECT Id, RaceId__c FROM Race__c WHERE RaceId__c = :raceId]) {
                 raceMap.put(r.RaceId__c, r.Id);
@@ -26,7 +36,7 @@ public with sharing class F1RaceResultLoader {
                 constructorMap.put(c.Constructor_Code__c, c.Id);
             }
 
-            // Llamada a la API
+            // Llamada API
             String endpoint = 'f1/' + season + '/' + round + '/results.json';
             String jsonResponse = ErgastAPI.getF1Data(endpoint);
             if (String.isBlank(jsonResponse)) return 'Respuesta vacía de la API.';
