@@ -6,13 +6,17 @@ export default class LoadRaceResults extends LightningElement {
     @track message;
 
     async handleClick() {
+        this.message = 'Procesando...';
         try {
-            // Obtener RaceId__c del registro actual
-            const race = await this.getRaceId();
-            const result = await loadRaceResults({ raceId: race });
+            const raceId = await this.getRaceId();
+            if (!raceId) {
+                this.message = 'Error: RaceId__c no encontrado en el registro.';
+                return;
+            }
+            const result = await loadRaceResults({ raceId: raceId });
             this.message = result;
         } catch (error) {
-            this.message = 'Error: ' + error.body.message;
+            this.message = 'Error inesperado: ' + (error.body ? error.body.message : error.message);
         }
     }
 
