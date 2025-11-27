@@ -1,0 +1,12 @@
+<template>
+    <lightning-card title="Crear Equipo Fantasy">
+        <div class="slds-p-around_medium">
+            <lightning-input label="Nombre del Equipo" value={teamName} onchange={handleNameChange}></lightning-input>
+            <lightning-dual-listbox name="drivers" label="Selecciona Pilotos" source-label="Disponibles" selected-label="Seleccionados"
+                options={driverOptions} onchange={handleDriverSelect} max="5"></lightning-dual-listbox>
+            <lightning-dual-listbox name="constructors" label="Selecciona Escuderías" source-label="Disponibles" selected-label="Seleccionadas"
+                options={constructorOptions} onchange={handleConstructorSelect} max="2"></lightning-dual-listbox>
+            <lightning-button label="Guardar Equipo" onclick={handleSave}></lightning-button>
+        </div>
+    </lightning-card>
+</template>
