@@ -1,48 +1,123 @@
-import { LightningElement, track, wire } from 'lwc';
+import { LightningElement, track } from 'lwc';
 import getDrivers from '@salesforce/apex/FantasyTeamController.getDrivers';
 import getConstructors from '@salesforce/apex/FantasyTeamController.getConstructors';
 import createFantasyTeam from '@salesforce/apex/FantasyTeamController.createFantasyTeam';
+import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 
-export default class CreateFantasyTeam extends LightningElement {
-    @track teamName = '';
-    @track selectedDrivers = [];
-    @track selectedConstructors = [];
+export default class FantasyTeamBuilder extends LightningElement {
+
     @track driverOptions = [];
     @track constructorOptions = [];
+    @track selectedDrivers = [];
+    @track selectedConstructors = [];
+    teamName = '';
+    isSaving = false;
 
-    @wire(getDrivers)
-    wiredDrivers({ data }) {
-        if (data) {
-            this.driverOptions = data.map(d => ({ label: d.Name + ' (' + d.Nationality__c + ')', value: d.Id }));
-        }
+    connectedCallback() {
+        this.loadDrivers();
+        this.loadConstructors();
     }
 
-    @wire(getConstructors)
-    wiredConstructors({ data }) {
-        if (data) {
-            this.constructorOptions = data.map(c => ({ label: c.Name + ' (' + c.Nationality__c + ')', value: c.Id }));
-        }
+    // Cargar pilotos
+    loadDrivers() {
+        getDrivers()
+            .then(result => {
+                this.driverOptions = result.map(d => ({
+                    label: d.Name,
+                    value: d.Id
+                }));
+            })
+            .catch(error => {
+                this.showError('Error al cargar pilotos', error.body ? error.body.message : error.message);
+            });
     }
 
+    // Cargar escuderías
+    loadConstructors() {
+        getConstructors()
+            .then(result => {
+                this.constructorOptions = result.map(c => ({
+                    label: c.Name,
+                    value: c.Id
+                }));
+            })
+            .catch(error => {
+                this.showError('Error al cargar escuderías', error.body ? error.body.message : error.message);
+            });
+    }
+
+    // Handlers UI
     handleNameChange(event) {
         this.teamName = event.target.value;
     }
 
-    handleDriverSelect(event) {
+    handleDriversChange(event) {
         this.selectedDrivers = event.detail.value;
     }
 
-    handleConstructorSelect(event) {
+    handleConstructorsChange(event) {
         this.selectedConstructors = event.detail.value;
     }
 
-    handleSave() {
-        createFantasyTeam({ name: this.teamName, drivers: this.selectedDrivers, constructors: this.selectedConstructors })
-            .then(() => {
-                alert('Equipo creado exitosamente');
+    // Crear equipo (llamando al Apex)
+    handleCreateTeam() {
+        if (!this.teamName) {
+            this.showError('Datos incompletos', 'Debes ingresar un nombre para el equipo.');
+            return;
+        }
+        if (this.selectedDrivers.length !== 5) {
+            this.showError('Selección inválida', 'Debes seleccionar exactamente 5 pilotos.');
+            return;
+        }
+        if (this.selectedConstructors.length !== 2) {
+            this.showError('Selección inválida', 'Debes seleccionar exactamente 2 escuderías.');
+            return;
+        }
+
+        this.isSaving = true;
+
+        console.log('DEBUG - teamName:', this.teamName);
+        console.log('DEBUG - selectedDrivers:', JSON.stringify(this.selectedDrivers));
+        console.log('DEBUG - selectedConstructors:', JSON.stringify(this.selectedConstructors));
+
+        createFantasyTeam({
+            name: this.teamName,
+            driverIds: this.selectedDrivers,
+            constructorIds: this.selectedConstructors
+        })
+            .then(message => {
+                this.isSaving = false;
+                this.showSuccess('Equipo creado', message);
+                // si quieres limpiar la selección:
+                // this.teamName = '';
+                // this.selectedDrivers = [];
+                // this.selectedConstructors = [];
             })
             .catch(error => {
-                alert('Error: ' + error.body.message);
+                this.isSaving = false;
+                console.error('DEBUG - error al crear el equipo:', JSON.stringify(error));
+                this.showError(
+                    'Error al crear el equipo',
+                    error.body ? error.body.message : error.message
+                        ? error.body.message
+                        : (error && error.message ? error.message :JSON.stringify(error))
+                );
             });
+    }
+
+    showSuccess(title, message) {
+        this.dispatchEvent(new ShowToastEvent({
+            title,
+            message,
+            variant: 'success'
+        }));
+    }
+
+    showError(title, message) {
+        this.dispatchEvent(new ShowToastEvent({
+            title,
+            message,
+            variant: 'error'
+        }));
     }
 }
