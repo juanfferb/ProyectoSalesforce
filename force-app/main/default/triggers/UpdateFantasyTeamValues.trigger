@@ -50,8 +50,7 @@ trigger UpdateFantasyTeamValues on Team_Fantasy_Driver__c (after insert, after u
         FantasyTeam__c ft = new FantasyTeam__c(
             Id             = teamId,
             CurrentValue__c = totalValue,
-            Total_Points__c = totalPoints,
-            Total_Wins__c   = totalWins
+            Total_Points__c = totalPoints
         );
         teamsToUpdate.add(ft);
     }

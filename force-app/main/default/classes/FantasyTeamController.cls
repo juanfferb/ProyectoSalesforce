@@ -87,7 +87,7 @@ public with sharing class FantasyTeamController {
 
             for (Id dId : driverIds) {
                 Driver__c d = [
-                    SELECT Name, Price__c, Points__c
+                    SELECT Name, Price__c, Points__c, Wins__c
                     FROM Driver__c
                     WHERE Id = :dId
                     LIMIT 1
@@ -98,7 +98,8 @@ public with sharing class FantasyTeamController {
                     Driver__c       = dId,
                     DriverCost__c   = d.Price__c,
                     DriverPoints__c = d.Points__c,
-                    Name            = d.Name     // “Team Fantasy Driver Name”
+                    DriverWins__c   = (d.Wins__c != null ? d.Wins__c : 0),
+                    Name            = d.Name     
                 );
                 driverRecords.add(tfd);
             }
