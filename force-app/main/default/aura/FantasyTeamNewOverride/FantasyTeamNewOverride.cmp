@@ -1,3 +1,6 @@
-<aura:component implements="force:lightningQuickActionWithoutHeader,force:hasSObjectName" access="global">
-    <c:createFantasyTeam />
+<aura:component implements="force:lightningQuickActionWithoutHeader,force:hasSObjectName"
+                access="global">
+
+    <c:createFantasyTeam onclose="{!c.handleClose}"/>
+
 </aura:component>

@@ -3,8 +3,9 @@ import getDrivers from '@salesforce/apex/FantasyTeamController.getDrivers';
 import getConstructors from '@salesforce/apex/FantasyTeamController.getConstructors';
 import createFantasyTeam from '@salesforce/apex/FantasyTeamController.createFantasyTeam';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
+import { NavigationMixin } from 'lightning/navigation';
 
-export default class FantasyTeamBuilder extends LightningElement {
+export default class FantasyTeamBuilder extends NavigationMixin(LightningElement) {
 
     @track driverOptions = [];
     @track constructorOptions = [];
@@ -85,22 +86,33 @@ export default class FantasyTeamBuilder extends LightningElement {
             driverIds: this.selectedDrivers,
             constructorIds: this.selectedConstructors
         })
-            .then(message => {
+            .then(newTeamId => {
                 this.isSaving = false;
-                this.showSuccess('Equipo creado', message);
-                // si quieres limpiar la selección:
-                // this.teamName = '';
-                // this.selectedDrivers = [];
-                // this.selectedConstructors = [];
+
+                // Toast
+                this.showSuccess('Equipo creado', 'El equipo fantasy fue creado correctamente');
+
+                // 🔵 Navegar al registro recién creado
+                this[NavigationMixin.Navigate]({
+                    type: 'standard__recordPage',
+                    attributes: {
+                        recordId: newTeamId,
+                        objectApiName: 'FantasyTeam__c',
+                        actionName: 'view'
+                    }
+                });
+
+                // 🔵 Avisar al Aura wrapper que debe cerrar el quick action
+                this.dispatchEvent(new CustomEvent('close'));
             })
             .catch(error => {
                 this.isSaving = false;
                 console.error('DEBUG - error al crear el equipo:', JSON.stringify(error));
                 this.showError(
                     'Error al crear el equipo',
-                    error.body ? error.body.message : error.message
+                    error.body && error.body.message
                         ? error.body.message
-                        : (error && error.message ? error.message :JSON.stringify(error))
+                        : (error && error.message ? error.message : JSON.stringify(error))
                 );
             });
     }

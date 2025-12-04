@@ -140,7 +140,7 @@ public with sharing class FantasyTeamController {
             // DriversValueSum, ConstructorsValue_Sum, DriversPoints_Sum,
             // ConstructorPoints_Sum, Current_Value__c, TotalPoints__c, etc.
 
-            return 'Equipo creado correctamente';
+            return ft.Id;
 
         } catch (Exception e) {
             System.debug('*** ERROR en createFantasyTeam: ' + e.getMessage());
