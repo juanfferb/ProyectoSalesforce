@@ -1,9 +1,9 @@
 <template>
-    <lightning-card title="Crear Equipo Fantasy">
+    <lightning-card title="Create Fantasy Team">
         <div class="slds-p-around_medium">
             <!-- Nombre del equipo -->
             <lightning-input
-                label="Nombre del equipo"
+                label="Name of the Team"
                 value={teamName}
                 onchange={handleNameChange}>
             </lightning-input>
@@ -11,10 +11,10 @@
             <!-- Drivers -->
             <lightning-dual-listbox
                 name="drivers"
-                label="Selecciona 5 pilotos"
-                source-label="Disponibles"
-                selected-label="Seleccionados"
-                field-level-help="Debes elegir exactamente 5 pilotos"
+                label="Select 5 drivers"
+                source-label="Available"
+                selected-label="Selected"
+                field-level-help="You must choose exactly 5 drivers"
                 options={driverOptions}
                 value={selectedDrivers}
                 onchange={handleDriversChange}
@@ -25,10 +25,10 @@
             <!-- Constructors -->
             <lightning-dual-listbox
                 name="constructors"
-                label="Selecciona 2 escuderías"
-                source-label="Disponibles"
-                selected-label="Seleccionadas"
-                field-level-help="Debes elegir exactamente 2 escuderías"
+                label="Select 2 constructors"
+                source-label="Available"
+                selected-label="Selected"
+                field-level-help="You must choose exactly 2 constructors"
                 options={constructorOptions}
                 value={selectedConstructors}
                 onchange={handleConstructorsChange}
@@ -40,7 +40,7 @@
             <div class="slds-m-top_medium slds-text-align_right">
                 <lightning-button
                     variant="brand"
-                    label="Crear equipo"
+                    label="Create team"
                     onclick={handleCreateTeam}
                     disabled={isSaving}>
                 </lightning-button>
