@@ -1,18 +1,25 @@
-# Salesforce DX Project: Next Steps
+Salesforce Fantasy F1 – Proyecto Práctico Salesforce Academy
+Autores: Juan Felipe Fernanadez Barrero, Monica Alejandra Pardo Graciano, Andres Castillo Sanchez
+Empresa: Inetum.
+Año: 2025
 
-Now that you’ve created a Salesforce DX project, what’s next? Here are some documentation resources to get you started.
+Este repositorio contiene el desarrollo del Proyecto Final de Salesforce Academy, cuyo objetivo es construir una plataforma completa de Fantasy Formula 1 utilizando Salesforce como backend y frontend principal. El sistema integra datos reales de la API pública Ergast/Jolpi, permite crear equipos Fantasy personalizados y calcula automáticamente estadísticas, puntajes y posiciones.
 
-## How Do You Plan to Deploy Your Changes?
+Descripción del Proyecto
+El proyecto implementa:
 
-Do you want to deploy a set of changes, or create a self-contained application? Choose a [development model](https://developer.salesforce.com/tools/vscode/en/user-guide/development-models).
+Integración con API externa (Ergast/Jolpi) mediante Apex callouts.
 
-## Configure Your Salesforce DX Project
+Carga automática de Drivers, Constructors, Races, Results y Sprint Results.
 
-The `sfdx-project.json` file contains useful configuration information for your project. See [Salesforce DX Project Configuration](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_ws_config.htm) in the _Salesforce DX Developer Guide_ for details about this file.
+Modelo de datos completo con objetos custom, relaciones Lookup y Master-Detail.
 
-## Read All About It
+Cálculo dinámico de puntos, victorias y valores económicos por piloto, constructor y equipo.
 
-- [Salesforce Extensions Documentation](https://developer.salesforce.com/tools/vscode/)
-- [Salesforce CLI Setup Guide](https://developer.salesforce.com/docs/atlas.en-us.sfdx_setup.meta/sfdx_setup/sfdx_setup_intro.htm)
-- [Salesforce DX Developer Guide](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_intro.htm)
-- [Salesforce CLI Command Reference](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference.htm)
+Fantasy Team Generator, desarrollado en LWC, con validaciones y lógica de negocio.
+
+Override del botón estándar "New" mediante Aura para usar un formulario LWC personalizado.
+
+Automatizaciones Apex (triggers + servicios) para mantener puntajes y totales actualizados.
+
+Experience Cloud para visualizar equipos, ranking y estadísticas desde un portal externo.
