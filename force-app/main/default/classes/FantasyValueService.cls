@@ -1,6 +1,5 @@
 public with sharing class FantasyValueService {
 
-    // Puedes ajustar estos rangos si quieres
     private static final Decimal DRIVER_MIN = 5000000;   // 5M
     private static final Decimal DRIVER_MAX = 25000000;  // 25M
     private static final Decimal CONSTRUCTOR_MIN = 10000000;  // 10M

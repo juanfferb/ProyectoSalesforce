@@ -92,7 +92,6 @@ export default class FantasyTeamBuilder extends NavigationMixin(LightningElement
                 // Toast
                 this.showSuccess('Equipo creado', 'El equipo fantasy fue creado correctamente');
 
-                // 🔵 Navegar al registro recién creado
                 this[NavigationMixin.Navigate]({
                     type: 'standard__recordPage',
                     attributes: {
@@ -102,7 +101,6 @@ export default class FantasyTeamBuilder extends NavigationMixin(LightningElement
                     }
                 });
 
-                // 🔵 Avisar al Aura wrapper que debe cerrar el quick action
                 this.dispatchEvent(new CustomEvent('close'));
             })
             .catch(error => {

@@ -1,9 +1,5 @@
 public with sharing class FantasyTeamController {
 
-    // =====================================================================
-    // 1. Listas para el LWC
-    // =====================================================================
-
     @AuraEnabled(cacheable=true)
     public static List<Driver__c> getDrivers() {
         return [
@@ -22,10 +18,6 @@ public with sharing class FantasyTeamController {
         ];
     }
 
-    // =====================================================================
-    // 2. Crear equipo + registros detalle (Team Fantasy Driver/Constructor)
-    // =====================================================================
-
     @AuraEnabled
     public static String createFantasyTeam(String name, List<Id> driverIds, List<Id> constructorIds) {
 
@@ -37,9 +29,6 @@ public with sharing class FantasyTeamController {
         System.debug('constructorIds size => ' + (constructorIds == null ? 'null' : String.valueOf(constructorIds.size())));
 
         try {
-            // ---------------------------
-            // Validaciones básicas
-            // ---------------------------
             if (String.isBlank(name)) {
                 throw new AuraHandledException('Debe ingresar un nombre para el equipo.');
             }
@@ -56,33 +45,15 @@ public with sharing class FantasyTeamController {
                 );
             }
 
-            // Presupuesto fijo para el equipo (puedes ajustarlo)
             Decimal budget = 100000000;
 
-            // ------------------------------------------------------
-            // 1) Crear el registro FantasyTeam__c (padre)
-            //    Campos según tus capturas: Budget__c, Status__c, etc.
-            //    Los roll-ups (DriversValueSum, ConstructorsValueSum,
-            //    DriversPoints_Sum, ConstructorPoints_Sum, Current_Value__c,
-            //    TotalPoints__c) se calculan solos.
-            // ------------------------------------------------------
             FantasyTeam__c ft = new FantasyTeam__c(
-                Name      = name,          // FantasyTeam Name (Name)
+                Name      = name,          
                 Budget__c = budget,
-                Status__c = 'Active'       // asegúrate de tener este valor en el picklist
+                Status__c = 'Active'       
             );
             insert ft;
 
-            // ------------------------------------------------------
-            // 2) Crear registros detalle Team Fantasy Driver
-            //    Objeto: Team_Fantasy_Driver__c
-            //    Campos que vamos a llenar según tu esquema:
-            //       - FantasyTeam__c (Master-Detail)
-            //       - Driver__c (Lookup Driver)
-            //       - DriverCost__c (Currency)
-            //       - DriverPoints__c (Number)
-            //       - Name (Team Fantasy Driver Name)
-            // ------------------------------------------------------
             List<Team_Fantasy_Driver__c> driverRecords = new List<Team_Fantasy_Driver__c>();
 
             for (Id dId : driverIds) {
@@ -105,16 +76,6 @@ public with sharing class FantasyTeamController {
             }
             insert driverRecords;
 
-            // ------------------------------------------------------
-            // 3) Crear registros detalle Team Fantasy Constructor
-            //    Objeto: Team_Fantasy_Constructor__c
-            //    Campos:
-            //       - FantasyTeam__c
-            //       - Constructor__c
-            //       - ConstructorCost__c
-            //       - ConstructorPoints__c
-            //       - Name
-            // ------------------------------------------------------
             List<Team_Fantasy_Constructor__c> constructorRecords = new List<Team_Fantasy_Constructor__c>();
 
             for (Id cId : constructorIds) {
@@ -130,15 +91,11 @@ public with sharing class FantasyTeamController {
                     Constructor__c      = cId,
                     ConstructorCost__c  = c.Price__c,
                     ConstructorPoints__c = c.Points__c,
-                    Name                = c.Name   // “Team Fantasy Constructor Name”
+                    Name                = c.Name   
                 );
                 constructorRecords.add(tfc);
             }
             insert constructorRecords;
-
-            // Los totales se calculan con tus roll-ups:
-            // DriversValueSum, ConstructorsValue_Sum, DriversPoints_Sum,
-            // ConstructorPoints_Sum, Current_Value__c, TotalPoints__c, etc.
 
             return ft.Id;
 
